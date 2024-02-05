@@ -1,0 +1,45 @@
+@startuml
+skinparam {
+    defaultFontName HarmonyOS Sans SC
+    NoteFontSize 12
+    Sequence {
+        ArrowColor #1E90FF
+        LifeLineBorderColor #1F90FF
+        LifeLineBackgroundColor #87CEFA
+        ParticipantBorderColor #1E90FF
+        ParticipantBackgroundColor #87CEFA
+        ParticipantBorderThickness 1.5
+    }
+}
+database L3
+participant SessionActor as sa
+participant XbmParallel as xp
+participant XbmSerial as xs
+participant PucchConfig as pc
+participant PucchSrsFeeder as psf
+
+L3 -> sa : UE_SETUP_REQ
+note over sa
+校验UE携带的参数信息，判断能否配置
+end note
+alt 校验成功
+    sa -> pc : PUCCH_UE_CONFIG_REQ
+else 校验失败
+    sa -> xp : UE_SETUP_REJ
+end
+
+note over pc
+在SR Config Bitmap上寻找一个未使用的资源
+使用该资源尝试配置PUCCH，调用函数configurePucchResource()
+验证能否配置成功并返回参数pucchSrConfigurationSuccess
+SRS/Bitmap/CellConfig
+end note
+
+pc -> psf : NRDRACTRLPUCCHUECONFIG_IND
+alt 分配成功
+pc -> sa : NRPUCCHUECONFIGEI_PUCCH_UE_CONFIG_CFM
+else 分配失败
+pc -> sa : NRPUCCHUECONFIGEI_PUCCH_UE_CONFIG_REJ
+end
+
+@enduml
